@@ -70,7 +70,7 @@
     TelephoneBook/
     ├── api/                    # Бэкенд на FastAPI
     │   ├──config/ 
-    │   │    └──.env.template   #Шаблон .env файла
+    │   │    └──.env.template   # Шаблон .env файла
     │   ├── __init__.py
     │   ├── main.py             # Точка входа FastAPI
     │   └── routers/            # Роуты API
