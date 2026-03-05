@@ -66,6 +66,7 @@
     Перейдите по адресу http://localhost:8000
 
 📁 **Структура проекта**
+
     ```text
     TelephoneBook/
     ├── api/                    # Бэкенд на FastAPI 
