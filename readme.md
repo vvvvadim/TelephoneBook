@@ -128,7 +128,7 @@
 
 Используйте строку поиска для фильтрации сотрудников по Ф.И.О. Найденные совпадения подсвечиваются желтым цветом.
 
-4 .Совершение звонка
+4. Совершение звонка
 
 Нажмите на любой номер телефона сотрудника. Будет отправлен POST-запрос на:
 
@@ -137,13 +137,14 @@
 5. Экспорт в PDF
 
 Нажмите кнопку «Экспорт в PDF» в правом верхнем углу для сохранения всего справочника в формате PDF.
+
 🔧 API Endpoints
 
-Метод	Endpoint	Описание
+    Метод	Endpoint	Описание
 
-GET	/	Главная страница справочника
+    GET	/	Главная страница справочника
 
-POST	/api/calls?manager=XXXX&client_number=YYYY	Инициация звонка
+    POST	/api/calls?manager=XXXX&client_number=YYYY	Инициация звонка
 
 🤝 Вклад в проект
 
@@ -165,16 +166,17 @@ POST	/api/calls?manager=XXXX&client_number=YYYY	Инициация звонка
 
 Проект полностью готов к запуску в Docker. Файл docker-compose.yaml содержит конфигурацию для сервиса:
 
-version: '3.8'
+    version: '3.8'
 
-services:
-  web:
-    build: .
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./book:/app/book
-    restart: unless-stopped
+    services:
+      web:
+        build: .
+        ports:
+          - "8000:8000"
+        volumes:
+          - ./book:/app/book
+        restart: unless-stopped
+
 
 📄 Лицензия
 
