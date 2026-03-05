@@ -66,8 +66,6 @@
     Перейдите по адресу http://localhost:8000
 
 📁 Структура проекта
-text
-
 TelephoneBook/
 ├── api/                    # Бэкенд на FastAPI
 │   ├── __init__.py
@@ -84,8 +82,6 @@ TelephoneBook/
 🗂️ Формат данных (book/telephonebook.json)
 
 Данные справочника хранятся в JSON-файле со следующей структурой:
-json
-
 {
   "Москва": {
     "icon": "🏢",
@@ -128,7 +124,6 @@ json
 4. Совершение звонка
 
 Нажмите на любой номер телефона сотрудника. Будет отправлен POST-запрос на:
-text
 
 /api/calls?manager={ваш_номер}&client_number={номер_сотрудника}
 
@@ -158,7 +153,6 @@ POST	/api/calls?manager=XXXX&client_number=YYYY	Инициация звонка
 🐳 Docker
 
 Проект полностью готов к запуску в Docker. Файл docker-compose.yaml содержит конфигурацию для сервиса:
-yaml
 
 version: '3.8'
 
