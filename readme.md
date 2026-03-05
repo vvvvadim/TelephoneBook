@@ -66,18 +66,20 @@
     Перейдите по адресу http://localhost:8000
 
 📁 Структура проекта
-TelephoneBook/
-├── api/                    # Бэкенд на FastAPI
-│   ├── __init__.py
-│   ├── main.py            # Точка входа FastAPI
-│   └── routers/           # Роуты API
-│       └── calls.py       # Обработка звонков
-├── book/                   # Фронтенд и статические файлы
-│   ├── index.html          # Основная HTML-страница
-│   └── telephonebook.json  # Данные справочника
-├── .gitignore
-├── docker-compose.yaml     # Конфигурация Docker Compose
-└── README.md               # Документация проекта
+    ```text
+    TelephoneBook/
+    ├── api/                    # Бэкенд на FastAPI 
+    │   ├── __init__.py
+    │   ├── main.py            # Точка входа FastAPI
+    │   └── routers/           # Роуты API
+    │       └── calls.py       # Обработка звонков
+    ├── book/                   # Фронтенд и статические файлы
+    │   ├── index.html          # Основная HTML-страница
+    │   └── telephonebook.json  # Данные справочника
+    ├── .gitignore
+    ├── docker-compose.yaml     # Конфигурация Docker Compose
+    └── README.md               # Документация проекта
+
 
 🗂️ Формат данных (book/telephonebook.json)
 
