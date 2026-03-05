@@ -12,7 +12,7 @@ services:
     networks:
       - project_network
     ports:
-      - 8003:8000
+      - 8000:8000
     user: "1000:1000"
     restart: on-failure
 
