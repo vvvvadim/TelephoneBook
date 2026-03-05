@@ -30,12 +30,12 @@
     ```bash
     git clone https://github.com/vvvvadim/TelephoneBook.git
     cd TelephoneBook
-
+    Создайте и заполните .env файл, образец указан в структуре проекта
     Запустите контейнеры:
     bash
-
+    
     docker-compose up -d
-
+    
     Откройте приложение:
     Перейдите в браузере по адресу http://localhost:8000
 
@@ -68,11 +68,13 @@
 📁 Структура проекта
 
     TelephoneBook/
-    ├── api/                    # Бэкенд на FastAPI 
+    ├── api/                    # Бэкенд на FastAPI
+    │   ├──config/ 
+    │   │    └──.env.template   #Шаблон .env файла
     │   ├── __init__.py
-    │   ├── main.py            # Точка входа FastAPI
-    │   └── routers/           # Роуты API
-    │       └── calls.py       # Обработка звонков
+    │   ├── main.py             # Точка входа FastAPI
+    │   └── routers/            # Роуты API
+    │       └── calls.py        # Обработка звонков
     ├── book/                   # Фронтенд и статические файлы
     │   ├── index.html          # Основная HTML-страница
     │   └── telephonebook.json  # Данные справочника
