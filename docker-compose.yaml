@@ -1,0 +1,21 @@
+services:
+  api:
+    container_name: TelephoneBook
+    build:
+      context: ./api/.
+      dockerfile: Dockerfile
+    environment:
+      - TZ=Europe/Moscow
+    command: fastapi run
+    volumes:
+      - ./book:/book
+    networks:
+      - project_network
+    ports:
+      - 8003:8000
+    user: "1000:1000"
+    restart: on-failure
+
+networks:
+  project_network:
+    driver: bridge

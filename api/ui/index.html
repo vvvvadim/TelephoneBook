@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Таблица звонков</title>
+    <!-- Подключаем pdfmake -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 30px;
+            max-width: 1400px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        h1 {
+            color: #333;
+            margin: 0;
+            font-weight: 600;
+            font-size: 24px;
+        }
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        .search-container {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-radius: 12px;
+            border: 1px solid #e0e0e0;
+        }
+        .search-icon {
+            color: #666;
+            font-size: 18px;
+        }
+        .search-input {
+            flex-grow: 1;
+            border: none;
+            background: transparent;
+            font-size: 16px;
+            padding: 8px 0;
+            outline: none;
+        }
+        .search-input::placeholder {
+            color: #999;
+        }
+        .search-clear {
+            color: #666;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 0 5px;
+        }
+        .search-clear:hover {
+            color: #333;
+        }
+        .search-results {
+            font-size: 14px;
+            color: #666;
+            margin-left: 10px;
+        }
+        .export-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+        .export-btn:hover {
+            background: #218838;
+        }
+        .export-btn.pdf {
+            background: #dc3545;
+        }
+        .export-btn.pdf:hover {
+            background: #c82333;
+        }
+        .manager-info {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border-left: 4px solid #667eea;
+        }
+        .manager-label {
+            font-size: 14px;
+            color: #666;
+        }
+        .manager-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            font-family: monospace;
+            letter-spacing: 2px;
+        }
+        .reset-btn {
+            margin-left: auto;
+            background: none;
+            border: 1px solid #ddd;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            color: #666;
+            transition: all 0.2s;
+        }
+        .reset-btn:hover {
+            background: #f0f0f0;
+            border-color: #999;
+        }
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+        .modal-content h2 {
+            margin-top: 0;
+            color: #333;
+            font-size: 20px;
+        }
+        .modal-content input {
+            width: 100%;
+            padding: 15px;
+            font-size: 24px;
+            text-align: center;
+            font-family: monospace;
+            letter-spacing: 8px;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            margin: 20px 0;
+            outline: none;
+        }
+        .modal-content input:focus {
+            border-color: #667eea;
+        }
+        .modal-content input.error {
+            border-color: #ff4444;
+            animation: shake 0.3s;
+        }
+        .modal-content button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 40px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .modal-content button:hover {
+            background: #5a67d8;
+        }
+        .hint {
+            color: #666;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        /* Стили для группировки */
+        .city-group {
+            margin-bottom: 30px;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .city-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .city-header:hover {
+            opacity: 0.95;
+        }
+        .city-title-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 20px;
+            font-weight: 600;
+        }
+        .city-icon {
+            font-size: 24px;
+        }
+        .city-name {
+            flex-grow: 1;
+        }
+        .employee-count {
+            background: rgba(255,255,255,0.2);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: normal;
+        }
+        .collapse-icon {
+            font-size: 20px;
+            transition: transform 0.3s;
+        }
+        .city-header.collapsed .collapse-icon {
+            transform: rotate(-90deg);
+        }
+        .city-address {
+            margin-top: 8px;
+            font-size: 14px;
+            font-weight: normal;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(255,255,255,0.15);
+            padding: 5px 10px;
+            border-radius: 8px;
+        }
+
+        .department-group {
+            margin: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background: white;
+        }
+        .department-header {
+            background: #f8f9fa;
+            padding: 12px 15px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #444;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid #e0e0e0;
+            cursor: pointer;
+        }
+        .department-header:hover {
+            background: #f0f0f0;
+        }
+        .department-header .dept-icon {
+            font-size: 16px;
+        }
+        .department-header .dept-name {
+            flex-grow: 1;
+        }
+        .department-header .employee-count {
+            background: #e0e0e0;
+            padding: 3px 10px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: normal;
+        }
+        .department-header .collapse-icon {
+            font-size: 16px;
+            transition: transform 0.3s;
+        }
+        .department-header.collapsed .collapse-icon {
+            transform: rotate(-90deg);
+        }
+
+        .department-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        .department-table th {
+            background: #f5f5f5;
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #555;
+            font-size: 14px;
+            border-bottom: 2px solid #ddd;
+        }
+        .department-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            vertical-align: top;
+        }
+        .department-table tr:last-child td {
+            border-bottom: none;
+        }
+        .highlight {
+            background-color: #fff3cd;
+            font-weight: bold;
+        }
+
+        .phones-container {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .phone-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: #f8f9fa;
+            padding: 4px 8px;
+            border-radius: 16px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+            width: fit-content;
+        }
+        .phone-item:hover {
+            background: #e3f2fd;
+            border-color: #2196f3;
+            transform: translateY(-1px);
+        }
+        .phone-item:active {
+            transform: translateY(0);
+        }
+        .phone-item .phone-type {
+            background: #667eea;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .phone-item .phone-number {
+            font-family: monospace;
+            font-weight: 500;
+            color: #333;
+        }
+        .phone-item .phone-icon {
+            opacity: 0.5;
+            font-size: 12px;
+        }
+        .phone-item:hover .phone-icon {
+            opacity: 1;
+        }
+
+        .status-message {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 8px;
+            display: none;
+        }
+        .status-message.success {
+            display: block;
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status-message.error {
+            display: block;
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status-message.info {
+            display: block;
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .status-message.warning {
+            display: block;
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+
+        .collapsed-content {
+            display: none;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 16px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+
+        .reload-btn {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-left: 10px;
+        }
+        .reload-btn:hover {
+            background: #138496;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📞 Телефонный справочник компании</h1>
+            <div class="header-actions">
+                <button class="export-btn pdf" id="exportPdfBtn">
+                    <span>📄</span> Экспорт в PDF
+                </button>
+            </div>
+        </div>
+
+        <div class="manager-info" id="managerInfo">
+            <span class="manager-label">Менеджер</span>
+            <span class="manager-number" id="managerDisplay">----</span>
+            <button class="reset-btn" id="resetManagerBtn" title="Сменить номер">🔄 Сменить</button>
+        </div>
+
+        <!-- Строка поиска -->
+        <div class="search-container">
+            <span class="search-icon">🔍</span>
+            <input type="text" class="search-input" id="searchInput" placeholder="Поиск по Ф.И.О...">
+            <span class="search-clear" id="searchClear" title="Очистить">✕</span>
+            <span class="search-results" id="searchResults"></span>
+            <button class="reload-btn" id="reloadDataBtn" title="Перезагрузить данные">
+                <span>🔄</span> Загрузить
+            </button>
+        </div>
+
+        <div id="directoryContainer">
+            <!-- Данные будут вставлены через JavaScript -->
+            <div class="no-results" id="loadingMessage">
+                <div class="loading" style="margin: 0 auto 10px;"></div>
+                Загрузка данных...
+            </div>
+        </div>
+
+        <div id="statusMessage" class="status-message"></div>
+    </div>
+
+    <!-- Модальное окно для ввода номера -->
+    <div class="modal" id="numberModal">
+        <div class="modal-content">
+            <h2>Введите внутренний номер</h2>
+            <p class="hint">4 цифры</p>
+            <input type="text" id="managerInput" maxlength="4" pattern="\d*" inputmode="numeric" placeholder="0000" autofocus>
+            <br>
+            <button id="saveManagerBtn">Сохранить</button>
+        </div>
+    </div>
+
+    <script>
+        // Ключ для хранения в localStorage
+        const STORAGE_KEY = 'managerNumber';
+
+        // Данные передаются из FastAPI
+        let companyData = JSON.parse('{{ phonebook_data|safe }}' || '{}');
+
+        // Элементы DOM
+        const modal = document.getElementById('numberModal');
+        const managerInput = document.getElementById('managerInput');
+        const saveBtn = document.getElementById('saveManagerBtn');
+        const managerDisplay = document.getElementById('managerDisplay');
+        const resetBtn = document.getElementById('resetManagerBtn');
+        const directoryContainer = document.getElementById('directoryContainer');
+        const statusMessage = document.getElementById('statusMessage');
+        const exportPdfBtn = document.getElementById('exportPdfBtn');
+        const reloadDataBtn = document.getElementById('reloadDataBtn');
+
+        // Элементы поиска
+        const searchInput = document.getElementById('searchInput');
+        const searchClear = document.getElementById('searchClear');
+        const searchResults = document.getElementById('searchResults');
+
+        // Состояние сворачивания
+        const collapseState = {
+            cities: {},
+            departments: {}
+        };
+
+        // Текущий поисковый запрос
+        let currentSearchQuery = '';
+
+        // Функция загрузки данных (использует данные из FastAPI)
+        function loadCompanyData() {
+            // Показываем индикатор загрузки
+            directoryContainer.innerHTML = `
+                <div class="no-results">
+                    <div class="loading" style="margin: 0 auto 10px;"></div>
+                    Загрузка данных...
+                </div>
+            `;
+
+            // Небольшая задержка для показа индикатора
+            setTimeout(() => {
+                // Проверяем, есть ли данные
+                if (companyData && Object.keys(companyData).length > 0) {
+                    // Сбрасываем состояние сворачивания
+                    collapseState.cities = {};
+                    collapseState.departments = {};
+
+                    // Очищаем поиск
+                    currentSearchQuery = '';
+                    searchInput.value = '';
+                    searchResults.textContent = '';
+
+                    // Отображаем данные
+                    renderDirectory();
+                    showStatus('✅ Данные успешно загружены', 'success');
+                } else {
+                    directoryContainer.innerHTML = `
+                        <div class="no-results">
+                            ❌ Ошибка загрузки данных: файл telephonebook.json не найден или пуст<br>
+                            <small>Убедитесь, что файл telephonebook.json существует в папке ui</small>
+                        </div>
+                    `;
+                    showStatus('❌ Данные не загружены', 'error');
+                }
+            }, 500);
+        }
+
+        // Загрузка справочника с учетом поиска
+        function renderDirectory() {
+            // Проверяем, есть ли данные
+            if (!companyData || Object.keys(companyData).length === 0) {
+                directoryContainer.innerHTML = `
+                    <div class="no-results">
+                        Нет данных для отображения. Нажмите "Загрузить" для загрузки данных.
+                    </div>
+                `;
+                return;
+            }
+
+            directoryContainer.innerHTML = '';
+
+            let totalResults = 0;
+            const query = currentSearchQuery.toLowerCase().trim();
+
+            Object.entries(companyData).forEach(([cityName, cityData]) => {
+                const cityGroup = document.createElement('div');
+                cityGroup.className = 'city-group';
+
+                // Фильтруем отделы по поисковому запросу
+                const filteredDepartments = {};
+                let cityHasMatches = false;
+
+                Object.entries(cityData.departments || {}).forEach(([deptName, deptData]) => {
+                    const filteredEmployees = (deptData.employees || []).filter(emp =>
+                        !query || (emp.fio && emp.fio.toLowerCase().includes(query))
+                    );
+
+                    if (filteredEmployees.length > 0) {
+                        filteredDepartments[deptName] = {
+                            ...deptData,
+                            employees: filteredEmployees
+                        };
+                        cityHasMatches = true;
+                        totalResults += filteredEmployees.length;
+                    }
+                });
+
+                if (!cityHasMatches && query) {
+                    return; // Пропускаем город, если нет совпадений и есть поисковый запрос
+                }
+
+                // Подсчет сотрудников в городе
+                const totalEmployees = query ?
+                    Object.values(filteredDepartments).reduce((sum, dept) => sum + (dept.employees?.length || 0), 0) :
+                    Object.values(cityData.departments || {}).reduce((sum, dept) => sum + (dept.employees?.length || 0), 0);
+
+                // Заголовок города
+                const cityHeader = document.createElement('div');
+                cityHeader.className = `city-header ${collapseState.cities[cityName] ? 'collapsed' : ''}`;
+
+                // Строка с названием города
+                const titleRow = document.createElement('div');
+                titleRow.className = 'city-title-row';
+                titleRow.innerHTML = `
+                    <span class="city-icon">${cityData.icon || '🏢'}</span>
+                    <span class="city-name">${cityName}</span>
+                    <span class="employee-count">${totalEmployees} сотрудников</span>
+                    <span class="collapse-icon">▼</span>
+                `;
+
+                cityHeader.appendChild(titleRow);
+
+                // Добавляем адрес если есть (всегда виден)
+                if (cityData.address) {
+                    const addressRow = document.createElement('div');
+                    addressRow.className = 'city-address';
+                    addressRow.innerHTML = `📍 ${cityData.address}`;
+                    cityHeader.appendChild(addressRow);
+                }
+
+                // Контейнер для отделов города (скрывается при сворачивании)
+                const cityContent = document.createElement('div');
+                cityContent.className = collapseState.cities[cityName] ? 'collapsed-content' : '';
+
+                // Добавляем отделы
+                const departmentsToRender = query ? filteredDepartments : (cityData.departments || {});
+
+                Object.entries(departmentsToRender).forEach(([deptName, deptData]) => {
+                    const deptGroup = document.createElement('div');
+                    deptGroup.className = 'department-group';
+
+                    // Заголовок отдела
+                    const deptHeader = document.createElement('div');
+                    deptHeader.className = `department-header ${collapseState.departments[`${cityName}-${deptName}`] ? 'collapsed' : ''}`;
+                    deptHeader.innerHTML = `
+                        <span class="dept-icon">${deptData.icon || '📋'}</span>
+                        <span class="dept-name">${deptName}</span>
+                        <span class="employee-count">${deptData.employees?.length || 0}</span>
+                        <span class="collapse-icon">▼</span>
+                    `;
+
+                    // Таблица сотрудников
+                    const deptContent = document.createElement('div');
+                    deptContent.className = collapseState.departments[`${cityName}-${deptName}`] ? 'collapsed-content' : '';
+
+                    const table = document.createElement('table');
+                    table.className = 'department-table';
+
+                    let tableRows = '';
+                    (deptData.employees || []).forEach(emp => {
+                        // Подсвечиваем совпадения при поиске
+                        let fioDisplay = emp.fio || '';
+                        if (query && emp.fio && emp.fio.toLowerCase().includes(query)) {
+                            const regex = new RegExp(`(${query})`, 'gi');
+                            fioDisplay = emp.fio.replace(regex, '<span class="highlight">$1</span>');
+                        }
+
+                        tableRows += `
+                            <tr>
+                                <td><strong>${fioDisplay}</strong></td>
+                                <td>${emp.position || ''}</td>
+                                <td>
+                                    <div class="phones-container">
+                                        ${emp.phones ? emp.phones.map(phone => `
+                                            <span class="phone-item" data-number="${phone.number}" data-type="${phone.type}">
+                                                <span class="phone-type">${phone.type}</span>
+                                                <span class="phone-number">${phone.number}</span>
+                                                <span class="phone-icon">📞</span>
+                                            </span>
+                                        `).join('') : ''}
+                                    </div>
+                                </td>
+                                <td>${emp.email || ''}</td>
+                            </tr>
+                        `;
+                    });
+
+                    table.innerHTML = `
+                        <thead>
+                            <tr>
+                                <th>Ф.И.О.</th>
+                                <th>Должность</th>
+                                <th>Контакты</th>
+                                <th>E-mail</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${tableRows}
+                        </tbody>
+                    `;
+
+                    deptContent.appendChild(table);
+                    deptGroup.appendChild(deptHeader);
+                    deptGroup.appendChild(deptContent);
+                    cityContent.appendChild(deptGroup);
+
+                    // Обработчик для сворачивания отдела
+                    deptHeader.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const key = `${cityName}-${deptName}`;
+                        collapseState.departments[key] = !collapseState.departments[key];
+                        deptHeader.classList.toggle('collapsed');
+                        deptContent.classList.toggle('collapsed-content');
+                    });
+                });
+
+                cityGroup.appendChild(cityHeader);
+                cityGroup.appendChild(cityContent);
+                directoryContainer.appendChild(cityGroup);
+
+                // Обработчик для сворачивания города
+                cityHeader.addEventListener('click', (e) => {
+                    // Проверяем, что клик не по адресу (адрес тоже часть заголовка)
+                    collapseState.cities[cityName] = !collapseState.cities[cityName];
+                    cityHeader.classList.toggle('collapsed');
+                    cityContent.classList.toggle('collapsed-content');
+                });
+            });
+
+            // Показываем сообщение, если ничего не найдено
+            if (query && totalResults === 0) {
+                directoryContainer.innerHTML = `
+                    <div class="no-results">
+                        🔍 По запросу "${query}" ничего не найдено
+                    </div>
+                `;
+            }
+
+            // Обновляем счетчик результатов
+            searchResults.textContent = query ? `Найдено: ${totalResults}` : '';
+
+            // Добавляем обработчики для телефонов
+            addPhoneClickHandlers();
+        }
+
+        // Добавление обработчиков клика на телефоны
+        function addPhoneClickHandlers() {
+            const phoneItems = document.querySelectorAll('.phone-item');
+            phoneItems.forEach(item => {
+                item.addEventListener('click', function(event) {
+                    event.stopPropagation();
+                    const managerNumber = localStorage.getItem(STORAGE_KEY);
+                    const clientNumber = this.getAttribute('data-number');
+                    const phoneType = this.getAttribute('data-type');
+
+                    if (!managerNumber) {
+                        showStatus('Ошибка: номер менеджера не найден', 'error');
+                        modal.style.display = 'flex';
+                        return;
+                    }
+
+                    sendPostRequest(managerNumber, clientNumber, phoneType);
+                });
+            });
+        }
+
+        // Отправка POST запроса
+        async function sendPostRequest(managerNumber, clientNumber, phoneType = 'телефон') {
+            const url = `/api/calls?manager=${encodeURIComponent(managerNumber)}&client_number=${encodeURIComponent(clientNumber)}`;
+
+            showStatus(`📞 Звонок по ${phoneType} номеру ${clientNumber}...`, 'success');
+
+            try {
+                console.log('POST', url, `Тип номера: ${phoneType}`);
+
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                const response = await fetch(url, { method: 'POST' });
+                if (response.ok) {
+                    showStatus(`✅ Звонок инициирован: менеджер ${managerNumber} звонит по ${phoneType} номеру ${clientNumber}`, 'success');
+                } else {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+            } catch (error) {
+                showStatus(`❌ Ошибка звонка: ${error.message}`, 'error');
+                console.error('Error:', error);
+            }
+        }
+
+        // Экспорт в PDF с помощью pdfmake
+        function exportToPDF() {
+            try {
+                // Проверяем наличие данных
+                if (!companyData || Object.keys(companyData).length === 0) {
+                    showStatus('❌ Нет данных для экспорта', 'error');
+                    return;
+                }
+
+                showStatus('🔄 Генерация PDF...', 'info');
+
+                const docDefinition = {
+                    pageOrientation: 'landscape',
+                    pageSize: 'A4',
+                    pageMargins: [20, 20, 20, 20],
+                    content: [
+                        {
+                            text: 'Телефонный справочник компании',
+                            style: 'header',
+                            margin: [0, 0, 0, 10]
+                        },
+                        {
+                            text: `Дата: ${new Date().toLocaleDateString('ru-RU')}`,
+                            style: 'date',
+                            margin: [0, 0, 0, 20]
+                        }
+                    ],
+                    styles: {
+                        header: {
+                            fontSize: 18,
+                            bold: true,
+                            color: '#667eea'
+                        },
+                        date: {
+                            fontSize: 10,
+                            color: '#666666'
+                        },
+                        cityHeader: {
+                            fontSize: 14,
+                            bold: true,
+                            color: '#ffffff',
+                            background: '#667eea',
+                            margin: [0, 5, 0, 5]
+                        },
+                        cityAddress: {
+                            fontSize: 10,
+                            color: '#666666',
+                            margin: [0, 0, 0, 5]
+                        },
+                        departmentHeader: {
+                            fontSize: 11,
+                            bold: true,
+                            margin: [0, 3, 0, 3]
+                        },
+                        tableHeader: {
+                            bold: true,
+                            fontSize: 9,
+                            fillColor: '#333333',
+                            color: '#ffffff',
+                            alignment: 'left'
+                        },
+                        tableCell: {
+                            fontSize: 8,
+                            alignment: 'left'
+                        }
+                    },
+                    defaultStyle: {
+                        font: 'Roboto'
+                    }
+                };
+
+                Object.entries(companyData).forEach(([cityName, cityData]) => {
+                    // Заголовок города
+                    docDefinition.content.push({
+                        text: `${cityName}`,
+                        style: 'cityHeader',
+                        margin: [0, 10, 0, 5]
+                    });
+
+                    // Адрес города (если есть)
+                    if (cityData.address) {
+                        docDefinition.content.push({
+                            text: `Адрес: ${cityData.address}`,
+                            style: 'cityAddress',
+                            margin: [10, 0, 0, 5]
+                        });
+                    }
+
+                    // Отделы города
+                    Object.entries(cityData.departments || {}).forEach(([deptName, deptData]) => {
+                        docDefinition.content.push({
+                            text: `${deptName}`,
+                            style: 'departmentHeader',
+                            margin: [10, 5, 0, 5]
+                        });
+
+                        const tableBody = [
+                            ['Ф.И.О.', 'Должность', 'Контакты', 'E-mail']
+                        ];
+
+                        (deptData.employees || []).forEach(emp => {
+                            const contacts = emp.phones ? emp.phones.map(p => `${p.type}: ${p.number}`).join('\n') : '';
+                            tableBody.push([
+                                emp.fio || '',
+                                emp.position || '',
+                                contacts,
+                                emp.email || ''
+                            ]);
+                        });
+
+                        docDefinition.content.push({
+                            table: {
+                                headerRows: 1,
+                                widths: ['*', '*', '*', '*'],
+                                body: tableBody
+                            },
+                            layout: {
+                                fillColor: function(rowIndex, node, columnIndex) {
+                                    return (rowIndex === 0) ? '#333333' : (rowIndex % 2 === 0) ? '#f5f5f5' : null;
+                                },
+                                hLineWidth: function(i, node) {
+                                    return (i === 0 || i === node.table.body.length) ? 1 : 0.5;
+                                },
+                                vLineWidth: function(i) {
+                                    return 0.5;
+                                },
+                                hLineColor: function(i) {
+                                    return '#dddddd';
+                                },
+                                vLineColor: function(i) {
+                                    return '#dddddd';
+                                }
+                            },
+                            margin: [10, 0, 10, 10]
+                        });
+                    });
+                });
+
+                pdfMake.createPdf(docDefinition).download(`phonebook_${new Date().toISOString().split('T')[0]}.pdf`);
+                showStatus('✅ PDF успешно создан', 'success');
+
+            } catch (error) {
+                console.error('PDF Error:', error);
+                showStatus(`❌ Ошибка создания PDF: ${error.message}`, 'error');
+            }
+        }
+
+        // Показ сообщения о статусе
+        function showStatus(message, type) {
+            statusMessage.textContent = message;
+            statusMessage.className = `status-message ${type}`;
+            statusMessage.style.display = 'block';
+
+            setTimeout(() => {
+                statusMessage.style.display = 'none';
+                setTimeout(() => {
+                    statusMessage.className = 'status-message';
+                }, 300);
+            }, 5000);
+        }
+
+        // Проверка валидности номера (ровно 4 цифры)
+        function isValidNumber(number) {
+            return /^\d{4}$/.test(number);
+        }
+
+        // Сохранение номера
+        function saveManagerNumber() {
+            const number = managerInput.value.trim();
+
+            if (!isValidNumber(number)) {
+                managerInput.classList.add('error');
+                setTimeout(() => managerInput.classList.remove('error'), 300);
+                return false;
+            }
+
+            localStorage.setItem(STORAGE_KEY, number);
+            managerDisplay.textContent = number;
+            modal.style.display = 'none';
+            managerInput.value = '';
+            showStatus(`Номер ${number} сохранен`, 'success');
+            return true;
+        }
+
+        // Показ модального окна
+        function showModal() {
+            modal.style.display = 'flex';
+            managerInput.value = '';
+            managerInput.focus();
+        }
+
+        // Обработчики поиска
+        function handleSearch() {
+            currentSearchQuery = searchInput.value;
+            renderDirectory();
+        }
+
+        function clearSearch() {
+            searchInput.value = '';
+            currentSearchQuery = '';
+            renderDirectory();
+            searchInput.focus();
+        }
+
+        // Инициализация при загрузке
+        function init() {
+            const savedNumber = localStorage.getItem(STORAGE_KEY);
+
+            if (savedNumber && isValidNumber(savedNumber)) {
+                managerDisplay.textContent = savedNumber;
+                modal.style.display = 'none';
+            } else {
+                localStorage.removeItem(STORAGE_KEY);
+                showModal();
+            }
+
+            // Загружаем данные
+            loadCompanyData();
+        }
+
+        // Обработчики событий
+        saveBtn.addEventListener('click', saveManagerNumber);
+
+        managerInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                saveManagerNumber();
+            }
+        });
+
+        managerInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/[^\d]/g, '');
+        });
+
+        resetBtn.addEventListener('click', () => {
+            localStorage.removeItem(STORAGE_KEY);
+            showModal();
+        });
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                if (!localStorage.getItem(STORAGE_KEY)) {
+                    e.target.style.display = 'flex';
+                } else {
+                    modal.style.display = 'none';
+                }
+            }
+        });
+
+        // Обработчики поиска
+        searchInput.addEventListener('input', handleSearch);
+        searchClear.addEventListener('click', clearSearch);
+
+        // Обработчик для кнопки перезагрузки данных
+        reloadDataBtn.addEventListener('click', () => {
+            loadCompanyData();
+        });
+
+        // Обработчик для экспорта в PDF
+        exportPdfBtn.addEventListener('click', exportToPDF);
+
+        // Запуск при загрузке страницы
+        init();
+    </script>
+</body>
+</html>
